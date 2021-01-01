@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS scan (
 	"folder" TEXT NOT NULL,
 	"priority" INTEGER NOT NULL,
 	"time" DATETIME NOT NULL,
+	"original" TEXT NOT NULL,
 	PRIMARY KEY(folder)
 )
 `
@@ -44,15 +45,15 @@ func newDatastore(path string) (*datastore, error) {
 }
 
 const sqlUpsert = `
-INSERT INTO scan (folder, priority, time)
-VALUES (?, ?, ?)
+INSERT INTO scan (folder, priority, time, original)
+VALUES (?, ?, ?, ?)
 ON CONFLICT (folder) DO UPDATE SET
 	priority = MAX(excluded.priority, scan.priority),
 	time = excluded.time
 `
 
 func (store *datastore) upsert(tx *sql.Tx, scan autoscan.Scan) error {
-	_, err := tx.Exec(sqlUpsert, scan.Folder, scan.Priority, scan.Time)
+	_, err := tx.Exec(sqlUpsert, scan.Folder, scan.Priority, scan.Time, scan.Original)
 	return err
 }
 
@@ -76,7 +77,7 @@ func (store *datastore) Upsert(scans []autoscan.Scan) error {
 }
 
 const sqlGetAvailableScan = `
-SELECT folder, priority, time FROM scan
+SELECT folder, priority, time, original FROM scan
 WHERE time < ?
 ORDER BY priority DESC, time ASC
 LIMIT 1
@@ -86,7 +87,7 @@ func (store *datastore) GetAvailableScan(minAge time.Duration) (autoscan.Scan, e
 	row := store.QueryRow(sqlGetAvailableScan, now().Add(-1*minAge))
 
 	scan := autoscan.Scan{}
-	err := row.Scan(&scan.Folder, &scan.Priority, &scan.Time)
+	err := row.Scan(&scan.Folder, &scan.Priority, &scan.Time, &scan.Original)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		return scan, autoscan.ErrNoScans
@@ -98,7 +99,7 @@ func (store *datastore) GetAvailableScan(minAge time.Duration) (autoscan.Scan, e
 }
 
 const sqlGetAll = `
-SELECT folder, priority, time FROM scan
+SELECT folder, priority, time, original FROM scan
 `
 
 func (store *datastore) GetAll() (scans []autoscan.Scan, err error) {
@@ -110,7 +111,7 @@ func (store *datastore) GetAll() (scans []autoscan.Scan, err error) {
 	defer rows.Close()
 	for rows.Next() {
 		scan := autoscan.Scan{}
-		err = rows.Scan(&scan.Folder, &scan.Priority, &scan.Time)
+		err = rows.Scan(&scan.Folder, &scan.Priority, &scan.Time, &scan.Original)
 		if err != nil {
 			return scans, err
 		}

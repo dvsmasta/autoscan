@@ -83,11 +83,13 @@ func (h handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	// Rewrite the path based on the provided rewriter.
 	folderPath := path.Dir(h.rewrite(path.Join(event.Series.Path, event.File.RelativePath)))
+	origpath := path.Join(event.Series.Path, event.File.RelativePath)
 
 	scan := autoscan.Scan{
 		Folder:   folderPath,
 		Priority: h.priority,
 		Time:     now(),
+		Original: origpath,
 	}
 
 	err = h.callback(scan)
