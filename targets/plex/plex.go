@@ -158,8 +158,58 @@ func (t target) Scan(scan autoscan.Scan) error {
 			defer resp.Body.Close()
 			fmt.Println("response Status:", resp.Status)
 			fmt.Println("response Headers:", resp.Header)
-			body, _ = ioutil.ReadAll(resp.Body)
-			fmt.Println("response Body:", string(body))
+			bodystring = string(body)
+			fmt.Println("response Body:", bodystring)
+
+			if strings.Contains(bodystring, "file does not exist") {
+				// this means its a new tv show possibly and the main directory doesnt exist
+				// so lets throw down 1 more directory and do a recurse false to make it pop and try 1 last time
+
+				base_dirtmp := base_dir[strings.LastIndex(base_dir, "/")+1:]
+				base_dir = strings.TrimSuffix(base_dir, base_dirtmp)
+				fmt.Println("Base Dir Trim:", base_dir)
+
+				fourthrequest := rclonerc{
+					"recursive": "false",
+					"dir":       base_dir,
+				}
+
+				jsonData, _ := json.Marshal(fourthrequest)
+				req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+				req.Header.Set("Content-Type", "application/json")
+
+				client := &http.Client{}
+				resp, err := client.Do(req)
+				if err != nil {
+					panic(err)
+				} else {
+					defer resp.Body.Close()
+					fmt.Println("response Status:", resp.Status)
+					fmt.Println("response Headers:", resp.Header)
+					body, _ := ioutil.ReadAll(resp.Body)
+					fmt.Println("response Body:", string(body))
+
+					fifthrequest := rclonerc{
+						"recursive": "true",
+						"dir":       s,
+					}
+					jsonData, _ = json.Marshal(fifthrequest)
+					req, err = http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+					req.Header.Set("Content-Type", "application/json")
+
+					client = &http.Client{}
+					resp, err = client.Do(req)
+					if err != nil {
+						panic(err)
+					}
+					defer resp.Body.Close()
+					fmt.Println("response Status:", resp.Status)
+					fmt.Println("response Headers:", resp.Header)
+					bodystring = string(body)
+					fmt.Println("response Body:", bodystring)
+				}
+
+			}
 
 		}
 	}
