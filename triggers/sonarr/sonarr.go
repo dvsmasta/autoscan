@@ -89,7 +89,6 @@ func (h handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		Folder:   folderPath,
 		Priority: h.priority,
 		Time:     now(),
-		Original: origpath,
 	}
 
 	err = h.callback(scan)

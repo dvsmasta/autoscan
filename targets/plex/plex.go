@@ -1,7 +1,11 @@
 package plex
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -73,6 +77,8 @@ func (t target) Available() error {
 	return err
 }
 
+type rclonerc map[string]interface{}
+
 func (t target) Scan(scan autoscan.Scan) error {
 	// determine library for this scan
 	scanFolder := t.rewrite(scan.Folder)
@@ -84,6 +90,78 @@ func (t target) Scan(scan autoscan.Scan) error {
 			Msg("No target libraries found")
 
 		return nil
+	}
+
+	url := "http://192.168.1.172:5572/vfs%2Frefresh"
+
+	s := strings.TrimPrefix(scanFolder, "/mnt/unionfs/")
+	fmt.Println("Trimmed String:", s)
+
+	base_dir := s[strings.LastIndex(s, "/")+1:]
+	base_dir = strings.TrimSuffix(s, base_dir)
+	fmt.Println("Base Dir Trim:", base_dir)
+
+	firstrequest := rclonerc{
+		"recursive": "true",
+		"dir":       s,
+	}
+	jsonData, _ := json.Marshal(firstrequest)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+	fmt.Println("response Status:", resp.Status)
+	fmt.Println("response Headers:", resp.Header)
+	body, _ := ioutil.ReadAll(resp.Body)
+	bodystring := string(body)
+	fmt.Println("response Body:", bodystring)
+
+	if strings.Contains(bodystring, "file does not exist") {
+		secondrequest := rclonerc{
+			"recursive": "false",
+			"dir":       base_dir,
+		}
+
+		jsonData, _ := json.Marshal(secondrequest)
+		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			panic(err)
+		} else {
+			defer resp.Body.Close()
+			fmt.Println("response Status:", resp.Status)
+			fmt.Println("response Headers:", resp.Header)
+			body, _ := ioutil.ReadAll(resp.Body)
+			fmt.Println("response Body:", string(body))
+
+			thirdrequest := rclonerc{
+				"recursive": "true",
+				"dir":       s,
+			}
+			jsonData, _ = json.Marshal(thirdrequest)
+			req, err = http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+			req.Header.Set("Content-Type", "application/json")
+
+			client = &http.Client{}
+			resp, err = client.Do(req)
+			if err != nil {
+				panic(err)
+			}
+			defer resp.Body.Close()
+			fmt.Println("response Status:", resp.Status)
+			fmt.Println("response Headers:", resp.Header)
+			body, _ = ioutil.ReadAll(resp.Body)
+			fmt.Println("response Body:", string(body))
+
+		}
 	}
 
 	// send scan request

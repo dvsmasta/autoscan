@@ -16,7 +16,6 @@ type Scan struct {
 	Folder   string
 	Priority int
 	Time     time.Time
-	Original string
 }
 
 type ProcessorFunc func(...Scan) error
