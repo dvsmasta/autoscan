@@ -85,6 +85,8 @@ func (h handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	folderPath := path.Dir(h.rewrite(path.Join(event.Movie.FolderPath, event.File.RelativePath)))
 	origpath := path.Join(event.Movie.FolderPath, event.File.RelativePath)
 
+	rlog.Info().Str("original path", origpath)
+
 	scan := autoscan.Scan{
 		Folder:   folderPath,
 		Priority: h.priority,
