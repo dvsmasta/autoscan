@@ -117,7 +117,7 @@ func (t target) Scan(scan autoscan.Scan) error {
 	url := "http://192.168.1.172:5570/vfs%2Frefresh"
 	url2 := "http://192.168.1.15:5572/vfs%2Frefresh"
 
-	s := strings.TrimPrefix(scanFolder, "/mnt/unionfs/")
+	s := strings.TrimPrefix(scanFolder, "/mnt/unionfs/Media")
 	fmt.Println("Trimmed String:", s)
 
 	base_dir := s[strings.LastIndex(s, "/"):]
