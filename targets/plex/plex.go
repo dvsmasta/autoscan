@@ -116,6 +116,7 @@ func (t target) Scan(scan autoscan.Scan) error {
 
 	url := "http://192.168.1.172:5570/vfs%2Frefresh"
 	url2 := "http://192.168.1.15:5572/vfs%2Frefresh"
+	url3 := "http://192.168.1.60:5571/vfs%2Frefresh"
 
 	s := strings.TrimPrefix(scanFolder, "/mnt/unionfs/Media")
 	fmt.Println("Trimmed String:", s)
@@ -130,6 +131,7 @@ func (t target) Scan(scan autoscan.Scan) error {
 	}
 	resp := rcrefresh(&firstrequest, url)
 	rcrefresh(&firstrequest, url2)
+	rcrefresh(&firstrequest, url3)
 	if strings.Contains(resp, "file does not exist") {
 		secondrequest := rclonerc{
 			"recursive": "false",
@@ -138,6 +140,7 @@ func (t target) Scan(scan autoscan.Scan) error {
 
 		resp2 := rcrefresh(&secondrequest, url)
 		rcrefresh(&secondrequest, url2)
+		rcrefresh(&secondrequest, url3)
 		if strings.Contains(resp2, "OK") {
 			fmt.Println("Third request var s:", s)
 
@@ -147,6 +150,7 @@ func (t target) Scan(scan autoscan.Scan) error {
 			}
 			rcrefresh(&thirdrequest, url)
 			rcrefresh(&thirdrequest, url2)
+			rcrefresh(&thirdrequest, url3)
 
 		} else {
 
@@ -164,6 +168,7 @@ func (t target) Scan(scan autoscan.Scan) error {
 
 			rcrefresh(&fourthrequest, url)
 			rcrefresh(&fourthrequest, url2)
+			rcrefresh(&fourthrequest, url3)
 
 		}
 
